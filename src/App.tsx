@@ -168,17 +168,10 @@ function App() {
             <Footer />
           </>
         } />
-
-        <Route element={
-          <>
-            <Navbar />
-            <main className="flex-grow">
-              <ChatBot />
-            </main>
-            <Footer />
-          </>
-        } />
       </Routes>
+      
+      {/* ChatBot is now placed outside Routes but still within the BrowserRouter context */}
+      <ChatBot />
     </div>
   );
 }
