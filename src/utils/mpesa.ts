@@ -1,122 +1,75 @@
 
-// M-Pesa API utilities
+// Mock M-Pesa integration
+// In a real application, you would integrate with the actual M-Pesa API
 
-// M-Pesa credentials
-const CONSUMER_KEY = "sMwMwGZ8oOiSkNrUIrPbcCeWIO8UiQ3SV4CyX739uAyZVs1F";
-const CONSUMER_SECRET = "A3Hs5zRY3nDCn7XpxPuc1iAKpfy6UDdetiCalIAfuAIpgTROI5yCqqOewDfThh2o";
-const API_URL = 'http://localhost:8000';
-const CALLBACK_URL = "https://webhook.site/3c1f62b5-4214-47d6-9f26-71c1f4b9c8f0";
-const API_BASE_URL = "https://sandbox.safaricom.co.ke";
+import { authFetch } from '@/services/api';
 
-// Function to initiate STK Push
-export const initiateSTKPush = async (
-  phoneNumber: string,
-  amount: number,
-  orderType: 'artwork' | 'exhibition',
-  orderId: string,
-  accountReference: string
-): Promise<any> => {
+export interface MpesaPaymentData {
+  amount: number;
+  phoneNumber: string;
+  accountReference: string;
+  transactionDesc: string;
+  userId: string;
+  itemId: string;
+  itemType: 'artwork' | 'exhibition';
+  customerInfo: {
+    name: string;
+    email: string;
+    phone: string;
+    deliveryAddress?: string;
+    slots?: number;
+  };
+}
+
+export const initiateMpesaPayment = async (paymentData: MpesaPaymentData) => {
+  // Simulate M-Pesa STK push
+  console.log('Initiating M-Pesa payment:', paymentData);
+  
+  // Mock successful payment response
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        success: true,
+        transactionId: `MP${Date.now()}`,
+        checkoutRequestId: `CHK${Date.now()}`,
+        message: 'Payment initiated successfully'
+      });
+    }, 2000);
+  });
+};
+
+export const checkPaymentStatus = async (checkoutRequestId: string) => {
+  // Mock payment status check
+  console.log('Checking payment status for:', checkoutRequestId);
+  
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        success: true,
+        status: 'completed',
+        transactionId: `MP${Date.now()}`,
+        amount: 1000
+      });
+    }, 1000);
+  });
+};
+
+// Get user orders and bookings from the backend
+export const getUserOrders = async (userId: string) => {
   try {
-    // Format phone number to match M-Pesa requirements (remove '+' if present)
-    const formattedPhone = phoneNumber.startsWith('+') 
-      ? phoneNumber.substring(1) 
-      : phoneNumber;
-    
-    const response = await fetch(`${API_URL}/mpesa/stk-push`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        phoneNumber: formattedPhone,
-        amount,
-        orderType,
-        orderId,
-        accountReference,
-        callbackUrl: CALLBACK_URL
-      }),
-    });
-    
-    return await response.json();
+    return await authFetch(`/orders/user/${userId}`);
   } catch (error) {
-    console.error('M-Pesa STK Push error:', error);
+    console.error('Error fetching user orders:', error);
     throw error;
   }
 };
 
-// Function to check transaction status
-export const checkTransactionStatus = async (checkoutRequestId: string): Promise<any> => {
+// Generate exhibition ticket
+export const generateExhibitionTicket = async (bookingId: string) => {
   try {
-    const response = await fetch(`${API_URL}/mpesa/status/${checkoutRequestId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    return await response.json();
+    return await authFetch(`/tickets/generate/${bookingId}`);
   } catch (error) {
-    console.error('M-Pesa transaction status check error:', error);
-    throw error;
-  }
-};
-
-// Function to finalize order after payment
-export const finalizeOrder = async (
-  checkoutRequestId: string,
-  orderType: 'artwork' | 'exhibition',
-  orderData: any
-): Promise<any> => {
-  try {
-    const response = await fetch(`${API_URL}/orders/finalize`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        checkoutRequestId,
-        orderType,
-        orderData
-      }),
-    });
-    
-    return await response.json();
-  } catch (error) {
-    console.error('Order finalization error:', error);
-    throw error;
-  }
-};
-
-// Function to get user orders
-export const getUserOrders = async (userId: string): Promise<any> => {
-  try {
-    const response = await fetch(`${API_URL}/orders/user/${userId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    return await response.json();
-  } catch (error) {
-    console.error('Get user orders error:', error);
-    throw error;
-  }
-};
-
-// Function to generate exhibition ticket
-export const generateExhibitionTicket = async (bookingId: string): Promise<any> => {
-  try {
-    const response = await fetch(`${API_URL}/tickets/generate/${bookingId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    return await response.json();
-  } catch (error) {
-    console.error('Ticket generation error:', error);
+    console.error('Error generating ticket:', error);
     throw error;
   }
 };

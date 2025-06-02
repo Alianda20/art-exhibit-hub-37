@@ -1,3 +1,4 @@
+
 import mysql.connector
 from mysql.connector import Error
 import json
@@ -257,6 +258,174 @@ def update_message_status(message_id, status):
     
     except Error as e:
         print(f"Error updating message status: {e}")
+        return {"error": str(e)}
+    
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+# User orders and bookings functions
+def get_user_orders(user_id):
+    """Get all orders for a specific user"""
+    connection = get_db_connection()
+    if connection is None:
+        return {"error": "Database connection failed"}
+    
+    try:
+        cursor = connection.cursor()
+        
+        # Get artwork orders
+        orders_query = """
+        SELECT 
+            ao.id,
+            ao.artwork_id,
+            a.title as artwork_title,
+            a.artist,
+            ao.order_date as date,
+            a.price,
+            (ao.total_amount - a.price) as delivery_fee,
+            ao.total_amount,
+            ao.payment_status as status,
+            ao.delivery_address
+        FROM artwork_orders ao
+        JOIN artworks a ON ao.artwork_id = a.id
+        WHERE ao.user_id = %s
+        ORDER BY ao.order_date DESC
+        """
+        cursor.execute(orders_query, (user_id,))
+        order_rows = cursor.fetchall()
+        
+        orders = []
+        for row in order_rows:
+            orders.append(dict_from_row(row, cursor))
+        
+        # Get exhibition bookings
+        bookings_query = """
+        SELECT 
+            eb.id,
+            eb.exhibition_id,
+            e.title as exhibition_title,
+            eb.booking_date as date,
+            e.location,
+            eb.slots,
+            eb.total_amount,
+            eb.payment_status as status
+        FROM exhibition_bookings eb
+        JOIN exhibitions e ON eb.exhibition_id = e.id
+        WHERE eb.user_id = %s
+        ORDER BY eb.booking_date DESC
+        """
+        cursor.execute(bookings_query, (user_id,))
+        booking_rows = cursor.fetchall()
+        
+        bookings = []
+        for row in booking_rows:
+            bookings.append(dict_from_row(row, cursor))
+        
+        return {"orders": orders, "bookings": bookings}
+    
+    except Error as e:
+        print(f"Error getting user orders: {e}")
+        return {"error": str(e)}
+    
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+def get_user_tickets(user_id):
+    """Get all exhibition tickets for a specific user"""
+    connection = get_db_connection()
+    if connection is None:
+        return {"error": "Database connection failed"}
+    
+    try:
+        cursor = connection.cursor()
+        
+        # Get exhibition bookings that can serve as tickets
+        query = """
+        SELECT 
+            eb.id,
+            eb.exhibition_id,
+            e.title as exhibition_title,
+            e.location,
+            e.start_date,
+            e.end_date,
+            eb.slots,
+            eb.booking_date,
+            eb.total_amount,
+            eb.payment_status
+        FROM exhibition_bookings eb
+        JOIN exhibitions e ON eb.exhibition_id = e.id
+        WHERE eb.user_id = %s AND eb.payment_status = 'completed'
+        ORDER BY e.start_date ASC
+        """
+        cursor.execute(query, (user_id,))
+        rows = cursor.fetchall()
+        
+        tickets = []
+        for row in rows:
+            tickets.append(dict_from_row(row, cursor))
+        
+        return {"tickets": tickets}
+    
+    except Error as e:
+        print(f"Error getting user tickets: {e}")
+        return {"error": str(e)}
+    
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+def generate_ticket_pdf(booking_id):
+    """Generate a PDF ticket for an exhibition booking"""
+    connection = get_db_connection()
+    if connection is None:
+        return {"error": "Database connection failed"}
+    
+    try:
+        cursor = connection.cursor()
+        
+        # Get booking details
+        query = """
+        SELECT 
+            eb.id,
+            eb.name,
+            eb.email,
+            eb.phone,
+            eb.slots,
+            eb.booking_date,
+            eb.total_amount,
+            e.title as exhibition_title,
+            e.location,
+            e.start_date,
+            e.end_date
+        FROM exhibition_bookings eb
+        JOIN exhibitions e ON eb.exhibition_id = e.id
+        WHERE eb.id = %s AND eb.payment_status = 'completed'
+        """
+        cursor.execute(query, (booking_id,))
+        booking = cursor.fetchone()
+        
+        if not booking:
+            return {"error": "Booking not found or payment not completed"}
+        
+        booking_dict = dict_from_row(booking, cursor)
+        
+        # In a real implementation, you would generate a PDF here
+        # For now, we'll return the ticket data
+        ticket_url = f"/api/tickets/{booking_id}.pdf"  # This would be the actual PDF URL
+        
+        return {
+            "success": True,
+            "ticketUrl": ticket_url,
+            "booking": booking_dict
+        }
+    
+    except Error as e:
+        print(f"Error generating ticket: {e}")
         return {"error": str(e)}
     
     finally:
