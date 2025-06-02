@@ -1,8 +1,6 @@
-
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 from urllib.parse import parse_qs, urlparse
-import cgi
 import os
 import sys
 
