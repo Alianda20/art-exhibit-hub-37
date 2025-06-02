@@ -3,6 +3,7 @@
 // In a real application, you would integrate with the actual M-Pesa API
 
 import { authFetch } from '@/services/api';
+import type { STKPushResponse, TransactionStatusResponse, FinalizeOrderResponse } from '@/types';
 
 export interface MpesaPaymentData {
   amount: number;
@@ -45,7 +46,7 @@ export const initiateSTKPush = async (
   type: 'artwork' | 'exhibition',
   itemId: string,
   accountReference: string
-) => {
+): Promise<STKPushResponse> => {
   console.log('Initiating STK Push:', { phoneNumber, amount, type, itemId, accountReference });
   
   // Mock STK push response
@@ -78,7 +79,7 @@ export const checkPaymentStatus = async (checkoutRequestId: string) => {
 };
 
 // Function expected by Payment.tsx
-export const checkTransactionStatus = async (checkoutRequestId: string) => {
+export const checkTransactionStatus = async (checkoutRequestId: string): Promise<TransactionStatusResponse> => {
   console.log('Checking transaction status for:', checkoutRequestId);
   
   return new Promise((resolve) => {
@@ -100,7 +101,7 @@ export const finalizeOrder = async (
   checkoutRequestId: string,
   type: 'artwork' | 'exhibition',
   orderData: any
-) => {
+): Promise<FinalizeOrderResponse> => {
   try {
     console.log('Finalizing order:', { checkoutRequestId, type, orderData });
     

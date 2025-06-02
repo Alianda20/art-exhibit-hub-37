@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   name: string;
@@ -70,4 +69,29 @@ export interface ContactMessage {
   message: string;
   date: string;
   status: 'new' | 'read' | 'replied';
+}
+
+// M-Pesa API response types
+export interface STKPushResponse {
+  CheckoutRequestID: string;
+  ResponseCode: string;
+  ResponseDescription: string;
+  MerchantRequestID: string;
+  error?: string;
+}
+
+export interface TransactionStatusResponse {
+  ResultCode: string;
+  ResultDesc: string;
+  MpesaReceiptNumber?: string;
+  Amount?: number;
+  TransactionDate?: string;
+  errorCode?: string;
+}
+
+export interface FinalizeOrderResponse {
+  success: boolean;
+  orderId?: string;
+  message?: string;
+  error?: string;
 }
